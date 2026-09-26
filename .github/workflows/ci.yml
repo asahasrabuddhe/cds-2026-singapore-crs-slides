@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The code repository is public once the talk is, so the submodule
+      # needs no token then. Until then CRS_CODE_READ_TOKEN, a fine-grained
+      # PAT with read access to it, is scoped to that one URL here.
+      - name: configure credentials for the code submodule
+        if: ${{ env.CRS_CODE_READ_TOKEN != '' }}
+        env:
+          CRS_CODE_READ_TOKEN: ${{ secrets.CRS_CODE_READ_TOKEN }}
+        run: |
+          git config --global \
+            url."https://x-access-token:${CRS_CODE_READ_TOKEN}@github.com/asahasrabuddhe/cds-2026-singapore-crs-code".insteadOf \
+            "https://github.com/asahasrabuddhe/cds-2026-singapore-crs-code"
+
+      - name: init submodules
+        run: git submodule update --init --recursive
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.27"
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+          cache: npm
+
+      # setup-node writes its own .npmrc pointing at registry.npmjs.org and
+      # reads the token from NODE_AUTH_TOKEN, so the repo's gitignored
+      # .npmrc is neither present nor needed here.
+      - name: install
+        run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN_THEME }}
+
+      - name: regenerate snippets from the code submodule
+        run: go run ./cmd/snippets
+
+      # The committed snippets exist so the deck builds without the
+      # submodule. That only holds if they match the code they claim to
+      # come from, so drift is a build failure rather than a stale slide.
+      - name: fail if committed snippets drifted from the code repo
+        run: |
+          if ! git diff --exit-code snippets/; then
+            echo "::error::snippets/ does not match a fresh regeneration from vendor/crs-code. Run 'npm run snippets' and commit the result."
+            exit 1
+          fi
+
+      - name: build deck
+        run: npm run build
+
+      - name: install chromium for export
+        run: npx playwright install --with-deps chromium
+
+      - name: export pdf
+        run: npm run export
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: slides-pdf
+          path: "*.pdf"
+          retention-days: 30

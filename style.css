@@ -1,0 +1,59 @@
+/* Semantic colours for the deck, bound to the theme's own tokens rather than
+ * to Tailwind's palette. The rule the deck depends on: the accent marks the
+ * one line on a slide that matters, green is what the container can do and
+ * red is what it cannot, and amber is reserved for the two things that are
+ * easy to get wrong and nothing else.
+ *
+ * The accent is --ac-tertiary rather than --ac-primary because the theme
+ * defines --ac-primary and --ac-warning as the same value, and collapsing
+ * the accent into the amber would destroy the distinction above. */
+
+.allowed  { color: var(--ac-success); }
+.denied   { color: var(--ac-error); }
+.accent   { color: var(--ac-tertiary); }
+.warn     { color: var(--ac-warning); }
+
+.b-allowed { border-color: var(--ac-success); }
+.b-denied  { border-color: var(--ac-error); }
+.b-accent  { border-color: var(--ac-tertiary); }
+
+/* Slide-level tints. Slidev puts a slide's `class:` on the slide container,
+ * so these have to reach the headings inside it. */
+.warn h1, .warn h2, .warn p    { color: var(--ac-warning); }
+.denied h1, .denied h2         { color: var(--ac-error); }
+
+/* The theme ships 15px body text and slide titles with no bottom margin.
+ * Fine on a laptop, cramped from the back of a hall. Every title gets air
+ * underneath, prose goes up to 18px, and code gets a smaller bump so long
+ * command lines keep fitting on one line. */
+:root {
+  --ac-text-body: 18px;
+  --ac-text-code: 14px;
+}
+
+.slidev-layout h1 {
+  margin-bottom: var(--ac-space-5);
+}
+
+/* The theme centres table headers but left-aligns table cells, so every
+ * column sits out of line with its own heading. Left is the safe default,
+ * because the tables here have prose in the right-hand column. */
+.slidev-layout table th,
+.slidev-layout table td {
+  text-align: left;
+  padding: 0.15em 1.1em 0.15em 0;
+}
+
+.slidev-layout table th:last-child,
+.slidev-layout table td:last-child {
+  padding-right: 0;
+}
+
+/* Slidev 52.14.1 leaves the goto dialog visible on every slide. Its closed
+ * state only sets `-top-20`, which parks the input above the viewport but
+ * leaves the results list down the right edge. This is what 52.19.1 does in
+ * the component. Delete it when the CLI moves. */
+#slidev-goto-dialog:not(.top-5) {
+  opacity: 0;
+  pointer-events: none;
+}
