@@ -209,7 +209,7 @@ func (s Set) CloneFlags() uintptr {
 
 ```bash
 go test ./internal/namespace/ && make build
-sudo ./mycontainer run -ns pid,uts -hostname box rootfs/busybox \
+sudo ./mycontainer run -ns pid,uts -hostname box ubuntu \
   /bin/sh -c 'hostname; echo $$; ls -d /proc/[0-9]* | wc -l'
 ```
 
@@ -325,11 +325,12 @@ steps := []struct {
 
 ```bash
 go test ./internal/rootfs/ && make build
-sudo ./mycontainer run rootfs/busybox /bin/sh -c 'ps; ls /; cat /etc/os-release; mount'
+touch /tmp/host-was-here
+sudo ./mycontainer run ubuntu /bin/sh -c 'ps; ls /; ls /tmp; mount'
 ```
 
 <div v-click class="pt-2 accent">
-Two processes. The busybox tree. No <code>/etc/os-release</code>. Nothing from the host in <code>mount</code>.
+Two processes. The image's tree. An empty <code>/tmp</code>. Nothing from the host in <code>mount</code>.
 </div>
 
 <!--
@@ -409,7 +410,7 @@ func cpuMax(cpus float64) string {
 
 ```bash
 go test ./internal/cgroup/ && make build
-sudo ./mycontainer run -pids 20 rootfs/busybox \
+sudo ./mycontainer run -pids 20 ubuntu \
   /bin/sh -c 'cat /sys/fs/cgroup/pids.max; for i in $(seq 40); do sleep 2 & done'
 ```
 
@@ -420,8 +421,7 @@ Keep <code>-pids</code> above sixteen. <code>pids.max</code> counts the Go init'
 <!--
 **S15 · YOUR TURN · 22:10**
 
-Six minutes. Expected: `20`, then `can't fork: Resource temporarily
-unavailable`.
+Six minutes. Expected: `20`, then `/bin/sh: 0: Cannot fork`.
 
 The click is the warning, and it is the PID 8 question from step 1
 answered: the init's threads are processes as far as `pids.max` is
@@ -494,9 +494,9 @@ func Default() Set {
 
 ```bash
 go test ./internal/caps/ ./internal/cli/ && make build
-sudo ./mycontainer run rootfs/busybox \
+sudo ./mycontainer run ubuntu \
   /bin/sh -c 'grep CapBnd /proc/self/status; mount -t tmpfs none /tmp'
-sudo ./mycontainer run -caps default,+CAP_SYS_ADMIN rootfs/busybox \
+sudo ./mycontainer run -caps default,+CAP_SYS_ADMIN ubuntu \
   /bin/sh -c 'mount -t tmpfs none /tmp && echo MOUNTED'
 ```
 
@@ -509,8 +509,9 @@ sudo ./mycontainer run -caps default,+CAP_SYS_ADMIN rootfs/busybox \
 
 Three minutes. `cli` goes green here too.
 
-**SAY** when the first refusals come up: "busybox says permission denied,
-are you root. It is root. Root just does not mean mount any more."
+**SAY** when the first refusals come up: "mount says permission denied,
+to a process that id says is root. Root just does not mean mount any
+more."
 -->
 
 ---

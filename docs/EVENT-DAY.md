@@ -34,7 +34,7 @@ From the code repository on the laptop:
 
 ```console
 $ make vm && make vm-shell
-$ make build rootfs
+$ make build rootfs           # rootfs pulls ubuntu:24.04 the first time; needs network
 $ ./scripts/check.sh          # ready
 $ ./scripts/demo.sh 7         # the one live beat
 ```
