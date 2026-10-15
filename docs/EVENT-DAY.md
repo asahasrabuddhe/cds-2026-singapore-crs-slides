@@ -22,6 +22,12 @@ reasons it happens, and the answer to each:
 - Docker Desktop users can follow along in a privileged container, route
   D of the setup doc. Rootful only, which is everything today.
 
+**The day before: update OrbStack.** When an update is pending, the orb
+client prints an "OrbStack update available!" banner at the top of every
+new shell, and the first in-slide terminal is a new shell on the
+projector. Run `orb update` the day before, not the morning of, then
+`make vm-shell` once to confirm the banner is gone.
+
 ## T-60: the presenter's VM
 
 From the code repository on the laptop:

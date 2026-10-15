@@ -57,3 +57,42 @@
   opacity: 0;
   pointer-events: none;
 }
+
+/* Speaker notes. Slidev renders them with `prose dark:prose-invert`, but
+ * this theme's build never emits the dark:prose-invert rule, so the notes
+ * kept the light-mode prose colours: body text #374151 and bold #111827 on
+ * the presenter's #121212 background, which is unreadable. Map the prose
+ * colours onto the theme's own tokens instead of relying on the variant.
+ * The dev server sometimes generates the variant later, on demand, so the
+ * selector is specific enough (0,3,0) to win over `.dark .dark:prose-invert`
+ * (0,2,0) whichever loads. Inline code goes amber, so commands to type
+ * stand out from what to say. */
+:root .slidev-note.prose {
+  --un-prose-body: var(--ac-on-surface);
+  --un-prose-headings: var(--ac-on-surface);
+  --un-prose-lead: var(--ac-on-surface-muted);
+  --un-prose-links: var(--ac-tertiary);
+  --un-prose-bold: var(--ac-on-surface);
+  --un-prose-counters: var(--ac-on-surface-muted);
+  --un-prose-bullets: var(--ac-on-surface-muted);
+  --un-prose-hr: var(--ac-surface-highest);
+  --un-prose-quotes: var(--ac-on-surface);
+  --un-prose-quote-borders: var(--ac-primary);
+  --un-prose-captions: var(--ac-on-surface-muted);
+  --un-prose-code: var(--ac-primary);
+  --un-prose-pre-code: var(--ac-on-surface);
+  --un-prose-pre-bg: var(--ac-surface-lowest);
+  --un-prose-th-borders: var(--ac-surface-highest);
+  --un-prose-td-borders: var(--ac-surface-high);
+}
+
+/* SAY lines are blockquotes. Keep them full brightness and upright, since
+ * they are what gets read aloud, and drop prose's added quotation marks. */
+:root .slidev-note.prose blockquote {
+  font-style: normal;
+  font-weight: 400;
+}
+:root .slidev-note.prose blockquote p::before,
+:root .slidev-note.prose blockquote p::after {
+  content: none;
+}
