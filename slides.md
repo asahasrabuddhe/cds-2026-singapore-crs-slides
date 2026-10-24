@@ -643,7 +643,7 @@ layout: default
 </div>
 
 <div v-click class="pt-3 font-mono text-sm opacity-80">
-1 clone3 · 1 sethostname · 12 mount · 1 pivot_root · 1 umount2 · 27 prctl · 3 execve
+1 clone3 · 1 sethostname · 12 mount · 1 pivot_root · 1 umount2 · 27 PR_CAPBSET_DROP · 3 execve
 </div>
 
 <!--
@@ -654,12 +654,15 @@ layout: default
 ./scripts/demo.sh 7
 ```
 
-One container under `strace -f`, tallied.
+One container under `strace -f`, tallied. The tally shows more `prctl`
+than the click: 31 on OrbStack, 75 on a stock Ubuntu kernel. Twenty-seven
+are capability drops. The rest are the Go runtime naming its memory with
+`PR_SET_VMA`, and the count depends on the kernel.
 
 **SAY**, from the tally on the click:
 > "One clone3 carrying every namespace flag and the cgroup fd: steps 1
-> and 3. Twelve mounts and one pivot_root: step 2. Twenty-seven prctl:
-> step 4. And an init that reaps: step 5. You wrote each of those this
+> and 3. Twelve mounts and one pivot_root: step 2. Twenty-seven capability
+> drops: step 4. And an init that reaps: step 5. You wrote each of those this
 > afternoon. That is a container. It always was."
 -->
 
