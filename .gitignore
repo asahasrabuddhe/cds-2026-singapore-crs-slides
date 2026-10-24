@@ -11,3 +11,6 @@ dist/
 
 # The code repository, cloned here by CI for cmd/snippets.
 /vendor/
+
+# The multipass client caches its update check in the working directory.
+/network-cache/

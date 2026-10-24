@@ -21,7 +21,7 @@ const cmd = './scripts/dev-shell.sh'
 
 <template>
   <div class="demo-terminal">
-    <TerminalWindow label="crs-dev" command="mycontainer">
+    <TerminalWindow label="crs" command="mycontainer">
       <LiveTerminal :cmd="cmd" :sid="sid" :font-size="fontSize" :auto-connect="autoConnect" />
     </TerminalWindow>
   </div>

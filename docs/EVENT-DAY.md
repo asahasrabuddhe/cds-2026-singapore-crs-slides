@@ -11,31 +11,35 @@ happen before the day. Send attendees
 from the code repository, with one line in front of it: run
 `./scripts/check.sh` inside the VM and reply with the last line.
 
-On the day, anyone without a ready box pairs with a neighbour. Three
-reasons it happens, and the answer to each:
+Everyone, the presenter included, uses the same Multipass VM, made the
+same way on Windows, macOS and Linux. One tool, one procedure, so every
+question in the room has one answer.
 
-- Multipass has to download an Ubuntu image and the venue wifi is slow.
-  Bring the image on a USB stick: `multipass launch` accepts a local file
-  path in place of `24.04`. Even then, pair them up; the launch and
-  provisioning take longer than step 1.
-- Windows attendees on WSL2 find they are on cgroup v1. Pair them.
-- Docker Desktop users can follow along in a privileged container, route
-  D of the setup doc. Rootful only, which is everything today.
+On the day, anyone without a ready box pairs with a neighbour. The usual
+reason is the Ubuntu image, about 600 MB, on slow venue wifi. Bring it on
+a USB stick, both the arm64 image for Apple Silicon and the amd64 one for
+everyone else; `multipass launch` takes a `file://` path in place of
+`24.04`. Even then, pair them up: the launch and provisioning take longer
+than step 1.
 
-**The day before: update OrbStack.** When an update is pending, the orb
-client prints an "OrbStack update available!" banner at the top of every
-new shell, and the first in-slide terminal is a new shell on the
-projector. Run `orb update` the day before, not the morning of, then
-`make vm-shell` once to confirm the banner is gone.
-
-## T-60: the presenter's VM
+## The day before: the presenter's VM
 
 From the code repository on the laptop:
 
 ```console
-$ make vm && make vm-shell
-$ make build rootfs           # rootfs pulls ubuntu:26.04 the first time; needs network
-$ ./scripts/check.sh          # ready
+$ make vm                     # multipass launch, provision, clone to ~/crs in the VM
+```
+
+The VM has its own clone from GitHub, like every attendee's. Push from
+the laptop, then `git pull` in the VM.
+
+## T-60: check the VM
+
+```console
+$ make vm-shell               # lands in ~/crs inside the VM
+$ git pull
+$ ./scripts/check.sh          # ready; pulls ubuntu:26.04 the first time
+$ make build
 $ ./scripts/demo.sh 7         # the one live beat
 ```
 
@@ -87,7 +91,7 @@ time goes to step 5.
 **A test hangs on step 5.** A `wait4` loop without `WNOHANG`. It is in the
 S22 notes; say it at minute three.
 
-**Someone's `-pids` run kills the init.** They went below what the init's threads need, six or less on a two-CPU VM.
+**Someone's `-pids` run kills the init.** They went below what the init's threads need, about seven on the workshop VM.
 That is the click on S15, and they found it first.
 
 **Someone's `-hostname` is refused.** They have not wired the clone flags

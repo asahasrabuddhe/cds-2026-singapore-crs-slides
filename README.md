@@ -62,10 +62,10 @@ CRS_CODE_DIR=../cds-2026-singapore-crs-code npm run snippets
 
 ## The terminal
 
-S23 carries a live terminal into the presenter's VM, landing in the
-finished runtime at the root of the sibling code checkout, so
-`./scripts/demo.sh 7` works as typed. `scripts/dev-shell.sh` opens it
-through OrbStack. Click the terminal to type; `r` restarts a dead session.
+S23 carries a live terminal into the presenter's Multipass VM, `crs`,
+landing in the finished runtime at `~/crs`, the VM's own clone of the
+code repository, so `./scripts/demo.sh 7` works as typed.
+`scripts/dev-shell.sh` opens it with `multipass exec`. Click the terminal to type; `r` restarts a dead session.
 
 ## Presenter notes
 

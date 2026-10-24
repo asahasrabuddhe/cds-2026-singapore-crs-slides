@@ -49,14 +49,14 @@ layout: default
 
 <div class="text-lg space-y-3 pt-2">
 
-**1.** A Linux VM that passes the pre-flight. In it:
+**1.** The Multipass VM from `docs/setup.md`. `multipass shell crs`, then:
 
 ```bash
 git clone https://github.com/asahasrabuddhe/cds-2026-singapore-crs-code.git ~/crs
 cd ~/crs && ./scripts/check.sh          # every line OK, last line: ready
 ```
 
-**2.** Your editor open on `~/crs/workshop/start`. Five files have a `TODO(step N)` in them.
+**2.** A second `multipass shell crs`, with your editor on `~/crs/workshop/start`. Five files have a `TODO(step N)` in them.
 
 **3.** This, in the VM:
 
@@ -73,13 +73,12 @@ Six packages fail. Five are the steps; the sixth goes green with step 4.
 <!--
 **S02 · SETUP · 0:30**
 
-Three minutes, no more. Walk the room while they type. The two failure
-modes: a VM that has not finished provisioning (`cat /etc/crs-provisioned`
-is empty; it is Go downloading, wait) and WSL2 on cgroup v1 (pair with a
-neighbour; `docs/setup.md` route C is for after).
+Three minutes, no more. Walk the room while they type. The failure mode
+is a VM that has not finished provisioning (`cat /etc/crs-provisioned`
+is empty; it is Go downloading, wait). Anyone with no VM at all pairs
+with a neighbour.
 
 The sixth package is `cli`, whose tests use the capability set from step 4.
-On a Mac the count is five, because the init test only runs on Linux.
 
 **SAY**:
 > "Each failing package is a step. When they are all green you have a
@@ -431,10 +430,11 @@ Six minutes. Expected: `20`, then `/bin/sh: 0: Cannot fork`.
 The click is the warning, and it is the PID 8 question from step 1
 answered: the init's threads are processes as far as `pids.max` is
 concerned. tini has one thread; that is the trade for writing this in Go.
-On a two-CPU VM the init needs seven: `-pids 7` stops the bomb,
-`-pids 6` kills the init with "failed to create new OS thread". More
-cores mean more threads, so sixteen is the margin. Someone will find
-the floor. Good. They found it first.
+On the two-CPU workshop VM the floor is about seven, and it moves by one
+from run to run. Just under it, `sh` cannot start ("resource temporarily
+unavailable") or the Go runtime dies with "failed to create new OS
+thread". More cores mean more threads, so sixteen is the margin. Someone
+will find the floor. Good. They found it first.
 
 Anyone done early: `-memory 64m` and a 100 MB string, exit 137.
 
@@ -654,10 +654,9 @@ layout: default
 ./scripts/demo.sh 7
 ```
 
-One container under `strace -f`, tallied. The tally shows more `prctl`
-than the click: 31 on OrbStack, 75 on a stock Ubuntu kernel. Twenty-seven
-are capability drops. The rest are the Go runtime naming its memory with
-`PR_SET_VMA`, and the count depends on the kernel.
+One container under `strace -f`, tallied. The tally shows about 75
+`prctl`, more than the click. Twenty-seven are capability drops. The rest
+are the Go runtime naming its memory with `PR_SET_VMA`.
 
 **SAY**, from the tally on the click:
 > "One clone3 carrying every namespace flag and the cgroup fd: steps 1
@@ -722,14 +721,12 @@ Leave S24 up for questions. This slide is for the photograph.
 
 Questions that come up, in order of likelihood:
 
-1. **My test passes and the container does not run.** The pure packages
-   test on macOS; the container needs the VM.
-2. **Why not `unshare(2)` from Go?** A PID namespace only applies to
+1. **Why not `unshare(2)` from Go?** A PID namespace only applies to
    children, and a user namespace needs a single-threaded process. Fork
    and exec is what every runtime does.
-3. **Where is the network?** A namespace with a down loopback. Wiring a
+2. **Where is the network?** A namespace with a down loopback. Wiring a
    veth pair, a bridge and NAT is its own workshop.
-4. **How does this compare to runc?** Same syscalls in the same order.
+3. **How does this compare to runc?** Same syscalls in the same order.
    runc adds seccomp, AppArmor, hooks, the OCI config and years of edge
    cases. `libcontainer/rootfs_linux.go` will look familiar after today.
 -->
