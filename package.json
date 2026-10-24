@@ -11,8 +11,7 @@
     "dev": "slidev --open",
     "build": "slidev build",
     "export": "slidev export --format pdf --with-clicks --output slides.pdf",
-    "export:notes": "slidev export-notes",
-    "snippets": "go run ./cmd/snippets"
+    "export:notes": "slidev export-notes"
   },
   "devDependencies": {
     "@slidev/cli": "52.14.1",

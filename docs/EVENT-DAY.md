@@ -56,11 +56,10 @@ not run.
 ## T-30: the deck
 
 ```console
-$ CRS_CODE_DIR=../cds-2026-singapore-crs-code npm run snippets
 $ npm run dev
 ```
 
-`p` for presenter mode. Click into the terminal on S23 and confirm it
+`p` for presenter mode. Click into the terminal on S09 and confirm it
 lands in the code repository inside the VM.
 
 ## T-10: the room
@@ -70,29 +69,30 @@ start. Walk the room. The question is "what did check.sh say".
 
 ## During
 
-Five "your turn" slides carry the time: 4, 8, 6, 3 and 5 minutes. Walk
-the room while they type, and use the click on each to leave the next
-question hanging. Anyone stuck gets the finished file, which S04 says out
-loud:
+One slide per step, and the room writes code for most of each: 5, 10, 7,
+5 and 7 minutes. Explain the idea for a minute, say "go", and walk the
+room. The clicks on the right are hints, and the notes say when to give
+each one, for the room rather than for anyone in particular. Anyone stuck
+gets the finished file, which S03 says out loud:
 
 ```bash
 cp ../../internal/rootfs/rootfs.go internal/rootfs/rootfs.go
 ```
 
-Checkpoints: 6:00 start step 1 whatever the clock says, 21:00 out of step
-2, 29:00 out of step 3, 39:30 go to the wrap whatever the room's state.
-Past 22:00 at the second, step 3 becomes a demo on the screen and its
-time goes to step 5.
+Checkpoints: 4:00 start step 1 whatever the clock says, 19:00 out of step
+2, 26:00 out of step 3, 31:00 out of step 4, 38:00 go to the wrap
+whatever the room's state. Past 20:00 at the second, step 3 becomes a
+demo on the screen and its time goes to step 5.
 
 ## When something dies
 
 **The slide terminal is dead.** `r` in it.
 
 **A test hangs on step 5.** A `wait4` loop without `WNOHANG`. It is in the
-S22 notes; say it at minute three.
+S08 notes; say it at minute three.
 
 **Someone's `-pids` run kills the init.** They went below what the init's threads need, about seven on the workshop VM.
-That is the click on S15, and they found it first.
+That is the warning on S06, and they found it first.
 
 **Someone's `-hostname` is refused.** They have not wired the clone flags
 yet. The refusal is deliberate: without `CLONE_NEWUTS` the call would

@@ -33,12 +33,9 @@ Automattic · @asahasrabuddhe
 AS
 
 <!--
-**S01 · COVER · 0:00**
+**S01 · COVER · before 0:00**
 
-Up while people find seats and plug in. Say the one thing that matters
-before anything else: if `./scripts/check.sh` in your VM does not say
-`ready`, put a hand up now. Forty-five minutes has no room for installing
-a VM, so anyone without one pairs with a neighbour today.
+Up while people find seats. One line about who you are, then S02.
 -->
 
 ---
@@ -56,7 +53,7 @@ git clone https://github.com/asahasrabuddhe/cds-2026-singapore-crs-code.git ~/cr
 cd ~/crs && ./scripts/check.sh          # every line OK, last line: ready
 ```
 
-**2.** A second `multipass shell crs`, with your editor on `~/crs/workshop/start`. Five files have a `TODO(step N)` in them.
+**2.** A second `multipass shell crs`, with your editor on `~/crs/workshop/start`.
 
 **3.** This, in the VM:
 
@@ -71,140 +68,96 @@ Six packages fail. Five are the steps; the sixth goes green with step 4.
 </div>
 
 <!--
-**S02 · SETUP · 0:30**
+**S02 · SETUP · from 4:15pm, then 0:00 to 2:00**
 
-Three minutes, no more. Walk the room while they type. The failure mode
-is a VM that has not finished provisioning (`cat /etc/crs-provisioned`
-is empty; it is Go downloading, wait). Anyone with no VM at all pairs
-with a neighbour.
+Up from the moment the room opens. Walk the room asking one question:
+"what did check.sh say?" A VM still provisioning has an empty
+`/etc/crs-provisioned`; it is Go downloading, so wait. Anyone with no VM
+pairs with a neighbour now, not at step 2.
 
 The sixth package is `cli`, whose tests use the capability set from step 4.
-
-**SAY**:
-> "Each failing package is a step. When they are all green you have a
-> container runtime, and you wrote the parts that make it one."
--->
-
----
-layout: statement
----
-
-# A container is a process<br/>wearing a costume
-
-<!--
-**S03 · STATEMENT · 3:30**
-
-The thesis. Everything today is one piece of the costume, and every piece
-is one function.
 -->
 
 ---
 layout: default
 ---
 
-# The costume, and what you write
+# A container is a process wearing a costume
 
-| Step | Pillar | You write | Minutes | Test |
-|---|---|---|---|---|
-| 1 | Namespaces | `CloneFlags()` | 5 | `./internal/namespace/` |
-| 2 | Rootfs | the `pivot_root` sequence | 10 | `./internal/rootfs/` |
-| 3 | cgroups | `Files()`, `cpuMax()` | 8 | `./internal/cgroup/` |
-| 4 | Capabilities | `Default()` | 4 | `./internal/caps/` |
-| 5 | Init | `reap()` | 7 | `./internal/initproc/` |
+| Step | The costume | You write | Minutes |
+|---|---|---|---|
+| 1 | Namespaces: what it can see | `CloneFlags()` | 5 |
+| 2 | Rootfs: where it lives | the `pivot_root` sequence | 10 |
+| 3 | cgroups: what it can use | `Files()`, `cpuMax()` | 7 |
+| 4 | Capabilities: what it can do | `Default()` | 5 |
+| 5 | Init: what PID 1 owes | `reap()` | 7 |
 
-<div v-click class="pt-4 opacity-80">
-The tests are the finished ones. Stuck? The answer is the same file two directories up:
-<code>cp ../../internal/rootfs/rootfs.go internal/rootfs/rootfs.go</code>, and carry on.
+<div class="pt-4 text-lg">
+Each step: I explain the idea, you write it, the test tells you when it is right.
+</div>
+
+<div v-click class="pt-3 accent">
+Stuck? The answer is the same file two directories up. <code>cp ../../internal/rootfs/rootfs.go internal/rootfs/</code>, and carry on.
 </div>
 
 <!--
-**S04 · PLAN · 4:00**
+**S03 · THE PLAN · 2:00**
 
-Read the "you write" column. Five functions. Everything else in the
-repository is scaffolding and it is deliberately boring.
+Two minutes, then step 1 whatever the clock says. The table is the whole
+workshop: five functions, and everything else in the repository is
+scaffolding.
 
-The click is the rule that keeps a 45-minute workshop moving: nobody sits
-stuck. Copying the answer is allowed, and saying so now stops people
-falling silently behind at step 2.
+The click is the rule that keeps forty-five minutes moving. Copying the
+answer is allowed, and saying so now stops people falling silently
+behind at step 2.
 -->
 
 ---
-layout: default
----
-
-# Two processes, always
-
-<<< @/snippets/clone.go go
-
-<div v-click class="pt-2 opacity-80 text-base">
-Namespaces are set at <code>clone(2)</code> and apply to the child. The Go runtime is several
-threads before <code>main</code> runs. So <code>mycontainer run</code> starts <code>mycontainer child</code>
-through <code>/proc/self/exe</code>, and the child is the container. <code>runc init</code> is the same trick.
-</div>
-
-<!--
-**S05 · CODE · 5:00**
-
-Already written, in `internal/container/container_linux.go`. The parent
-outside, the child as PID 1 inside, a spec over a pipe between them. Say
-it once: every function they write today runs in one or the other.
-
-**CHECKPOINT** 6:00. Start step 1 here whatever the clock says.
--->
-
----
-layout: section
-chapter: "01"
+layout: step
 ---
 
 ::title::
-Step 1. Namespaces: <span class="ac-accent">what it can see</span>
+Step 1 · Namespaces: what it can see
 
 ::default::
-`internal/namespace/namespace.go`, then one line in `container_linux.go`. Five minutes.
 
-<!--
-**S06 · SECTION · 6:00**
--->
+<div class="text-base space-y-3">
 
----
-layout: default
----
+A namespace is one bit passed to `clone(2)`, and it applies to the child. So `mycontainer run` starts itself again as `mycontainer child`, through `/proc/self/exe`, with the flags on that clone. The child is the container.
 
-# Seven namespaces, seven bits
+**You write** `CloneFlags()` in `internal/namespace/namespace.go`, then one line in `sysProcAttr`, `internal/container/container_linux.go`.
 
-| Flag | Isolates | Inside |
-|---|---|---|
-| `CLONE_NEWPID` | process IDs | the first process is PID 1 |
-| `CLONE_NEWNS` | the mount table | a private `/proc`, and the pivot |
-| `CLONE_NEWUTS` | hostname | `hostname` is the container id |
-| `CLONE_NEWIPC` | shared memory, queues | the host's are invisible |
-| `CLONE_NEWNET` | interfaces, routes, ports | a down `lo`, nothing else |
-| `CLONE_NEWCGROUP` | the cgroup tree | `/proc/self/cgroup` reads `0::/` |
-| `CLONE_NEWUSER` | UIDs and capabilities | root, mapped to you |
+</div>
 
-<!--
-**S07 · TABLE · 6:10**
+::right::
 
-Thirty seconds. One bit each; the constants are at the top of the file
-they are about to edit. `CloneFlags()` ORs together the ones that are on.
--->
+<div class="text-base space-y-4">
 
----
-layout: default
----
+<div>The seven <code>CloneNew…</code> constants are at the top of the file. OR in each one whose field is on.</div>
 
-# Your turn: `CloneFlags()`, then wire it
+<div v-click="1">
 
 ```go
-// internal/namespace/namespace.go
-func (s Set) CloneFlags() uintptr {
-	// TODO(step 1): one bit per namespace that is on.
+var f uintptr
+if s.PID {
+	f |= CloneNewPID
 }
-
-// internal/container/container_linux.go, in sysProcAttr
-// TODO(step 1): attr.Cloneflags from s.Namespaces.CloneFlags().
+// ...six more
 ```
+
+</div>
+
+<div v-click="2">
+
+```go
+attr.Cloneflags = s.Namespaces.CloneFlags()
+```
+
+</div>
+
+</div>
+
+::run::
 
 ```bash
 go test ./internal/namespace/ && make build
@@ -212,115 +165,67 @@ sudo ./mycontainer run -ns pid,uts -hostname box ubuntu \
   /bin/sh -c 'hostname; echo $$; ls -d /proc/[0-9]* | wc -l'
 ```
 
-<div v-click class="pt-2 accent">
-Hostname <code>box</code>, a small PID, and <code>/proc</code> still listing the host. Why?
+<div v-click="3" class="accent">
+<code>box</code>, a small PID, and <code>/proc</code> still lists the host. Why?
 </div>
 
 <!--
-**S08 · YOUR TURN · 6:40**
+**S04 · STEP 1 · 4:00, five minutes**
 
-Four minutes. The test names the missing flag when one is wrong.
+**SAY**, one minute: the idea on the left. Then "go", and walk the room.
 
-Before the wiring line is in, the runtime refuses `-hostname` with
-"not in a new UTS namespace". That is deliberate: without the flag, the
-call would rename their VM. If someone hits it, that is the hint.
+Click 1 at minute two, click 2 at minute three, for the room rather than
+for anyone in particular. The test names the missing flag when one is
+wrong.
 
-Leave the click hanging while they type.
+**WATCH FOR** "not in a new UTS namespace": they have `CloneFlags` but not
+the wiring line. The refusal is deliberate, because without the flag the
+call would rename their VM.
+
+Click 3 at minute four, and leave the question hanging. The shell is
+PID 8 or 9 rather than 2 because the Go init's threads took the numbers
+in between; it comes back at step 3.
+
+**CHECKPOINT** 9:00. Step 2 whatever the room's state.
 -->
 
 ---
-layout: statement
----
-
-# A PID namespace changes the numbers.<br/>`/proc` is what `ps` reads.
-
-<div class="opacity-70 pt-6">
-<code>/proc</code> is the host's until the container has its own. That is step 2.
-</div>
-
-<!--
-**S09 · STATEMENT · 11:00**
-
-The answer to the question on S08, in one line. It is the most common
-mistake in this whole subject: people type `unshare -p`, run `ps`, and
-wonder why nothing changed.
-
-If anyone asks why the shell is PID 8 and not 2: the Go init's threads
-took 2 to 7, because a thread takes an ID from the same namespace. It
-comes back at step 3.
-
-**CHECKPOINT** 11:30.
--->
-
----
-layout: section
-chapter: "02"
+layout: step
 ---
 
 ::title::
-Step 2. Rootfs: <span class="ac-accent">where it lives</span>
+Step 2 · Rootfs: where it lives
 
 ::default::
-`internal/rootfs/rootfs.go`. Ten minutes, and the order is the lesson.
 
-<!--
-**S10 · SECTION · 11:30**
--->
+<div class="text-base space-y-3">
 
----
-layout: default
----
+`ps` reads `/proc`, and `/proc` is the host's until the container mounts its own. That is step 1's answer. The container's root is a directory that `pivot_root` swaps in, and the order of the calls is the lesson.
 
-# `pivot_root`, and the order that works
-
-<div class="text-base space-y-1 pt-1">
-
-**1.** `mount("", "/", MS_REC|MS_PRIVATE)`. systemd shares every mount; without this the last step unmounts the host's root.
-
-**2.** `mount(rootfs, rootfs, MS_BIND|MS_REC)`. `pivot_root` wants a mount point. A directory is not one.
-
-**3.** `proc` on `rootfs/proc`, from inside the PID namespace. `tmpfs` on `rootfs/dev`, then `populateDev`.
-
-**4.** `sysfs` on `rootfs/sys`, `cgroup2` on `rootfs/sys/fs/cgroup`. Both optional.
-
-**5.** `chdir(rootfs)`, `pivot_root(".", putOld)`, `chdir("/")`.
-
-**6.** `umount2(putOld, MNT_DETACH)`, then `remove(putOld)`.
+**You write** the `steps` list in `Pivot`, `internal/rootfs/rootfs.go`. The comment lists all seven.
 
 </div>
 
-<div v-click class="pt-3 accent">
-The test records every call and compares the sequence. It tells you which one is wrong, and how.
-</div>
+::right::
 
-<!--
-**S11 · SEQUENCE · 11:40**
+<div class="text-base space-y-4">
 
-Ninety seconds, with a beat on 1 and on 5. Step 1: systemd makes every
-mount shared, so unmounting the old root inside the namespace propagates
-out and unmounts the host's; people have done this to their laptops. Step
-5 is why this is not chroot: chroot leaves the old root reachable to
-anything holding a file descriptor outside it; `pivot_root` swaps the
-mount and the old one is detached.
--->
-
----
-layout: default
----
-
-# Your turn: the sequence
+<div>Each step is a name, a call through <code>m</code>, and whether it may fail. The first:</div>
 
 ```go
-// internal/rootfs/rootfs.go, in Pivot
-steps := []struct {
-	name     string
-	do       func() error
-	optional bool
-}{
-	// TODO(step 2): the sequence, in order. Each step is a mount or a
-	// syscall through m. rootfs_test.go pins the exact order and flags.
-}
+{"make / private", func() error {
+	return m.Mount("", "/", "",
+		MS_REC|MS_PRIVATE, "")
+}, false},
 ```
+
+<div v-click="1">Write one, run the test. It prints the call it wanted, flags and all.</div>
+
+<div v-click="2">Private first. Bind the rootfs onto itself: <code>pivot_root</code> wants a mount point.</div>
+
+</div>
+
+::run::
 
 ```bash
 go test ./internal/rootfs/ && make build
@@ -328,89 +233,71 @@ touch /tmp/host-was-here
 sudo ./mycontainer run ubuntu /bin/sh -c 'ps; ls /; ls /tmp; mount'
 ```
 
-<div v-click class="pt-2 accent">
-Two processes. The image's tree. An empty <code>/tmp</code>. Only its own mounts in <code>mount</code>.
+<div v-click="3" class="accent">
+Two processes. The image's tree. An empty <code>/tmp</code>. Only its own mounts.
 </div>
 
 <!--
-**S12 · YOUR TURN · 13:10**
+**S05 · STEP 2 · 9:00, ten minutes**
 
-Eight minutes; the longest step. The test prints the call it got against
-the call it wanted, flags in hex, so it earns its keep here. Two things
-people get wrong: forgetting `MS_REC` on the private remount (the test
-says so) and calling `pivot_root` from outside the new root (EINVAL at
-runtime; say it out loud at minute four).
+**SAY**, one minute: the answer to step 1's question, then the idea. Step
+1 of the seven matters most: systemd makes every mount shared, so
+unmounting the old root inside the namespace would propagate out and
+unmount the host's. People have done this to their laptops.
 
-At minute six, remind the room about the `cp` escape hatch from S04.
+Click 1 at minute two, click 2 at minute four. At minute six, say the
+`cp` escape hatch out loud again.
 
 If anyone asks why `mount` names the VM's disk for `/`, such as
-`/dev/vda1 on / type ext4`: the root is a bind mount of `rootfs/ubuntu`,
+`/dev/sda1 on / type ext4`: the root is a bind mount of `rootfs/ubuntu`,
 which lives on that disk, and the device nodes in `/dev` are bind mounts
-of the host's. What is gone is every other mount the host has.
+of the VM's. What is gone is every other mount the VM has.
 
-**CHECKPOINT** 21:00. Past 22:00, do step 3 together on the screen rather
-than as an exercise, and give the time to step 5.
+**CHECKPOINT** 19:00. Past 20:00, do step 3 together on the screen and
+give its time to step 5.
 -->
 
 ---
-layout: section
-chapter: "03"
+layout: step
 ---
 
 ::title::
-Step 3. cgroups: <span class="ac-accent">what it can use</span>
+Step 3 · cgroups: what it can use
 
 ::default::
-`internal/cgroup/cgroup.go`, then two lines in `container_linux.go`. Eight minutes.
 
-<!--
-**S13 · SECTION · 21:00**
--->
+<div class="text-base space-y-3">
 
----
-layout: default
----
+cgroup v2 is a filesystem. A limit is a number written to a file in the container's directory, and the kernel enforces it. The child is born inside that directory, so the first fork of a fork bomb already counts.
 
-# cgroup v2 is a filesystem
+**You write** `Files()` and `cpuMax()` in `internal/cgroup/cgroup.go`, then two lines in `sysProcAttr`.
 
-```
-/sys/fs/cgroup/mycontainer/<id>/
-  memory.max        67108864          bytes, then the OOM killer
-  memory.swap.max   0                 or memory.max is a suggestion
-  cpu.max           50000 100000      quota and period, µs: half a core
-  pids.max          20                fork returns EAGAIN past twenty
-```
+<div class="warn">Keep <code>-pids</code> at sixteen or more. It counts the Go init's own threads.</div>
 
-<div v-click class="pt-4 opacity-80 text-base">
-<code>Create</code> makes the directory and enables the controllers. You write <code>Files()</code>, which
-decides what goes in it, and <code>cpuMax</code>. Then <code>UseCgroupFD</code> and <code>CgroupFD</code>: the child is
-born inside its cgroup (<code>CLONE_INTO_CGROUP</code>), so the first fork of a fork bomb already counts.
 </div>
 
-<!--
-**S14 · CGROUPS · 21:10**
+::right::
 
-One minute. The line that bites: without `memory.swap.max` a process at
-`memory.max` keeps going into swap and the limit is a suggestion; Docker
-sets it for you.
--->
+<div class="text-base space-y-4">
 
----
-layout: default
----
+<div>Four files: <code>memory.max</code> in bytes, <code>memory.swap.max</code> as <code>0</code> beside it, <code>cpu.max</code>, <code>pids.max</code>. A zero limit writes nothing.</div>
 
-# Your turn: `Files()`, `cpuMax()`, and the fd
+<div v-click="1"><code>cpu.max</code> is a quota and a period in microseconds. The period is 100000, so half a CPU is <code>50000 100000</code>.</div>
+
+<div v-click="2">
 
 ```go
-// internal/cgroup/cgroup.go
-func (l Limits) Files() map[string]string {
-	// TODO(step 3): memory.max (and memory.swap.max), cpu.max via cpuMax, pids.max.
+if group != nil {
+	attr.UseCgroupFD = true
+	attr.CgroupFD = group.FD
 }
-func cpuMax(cpus float64) string {
-	// TODO(step 3): "<quota> <period>", period 100000; zero or less is "max".
-}
-// container_linux.go, when group != nil: attr.UseCgroupFD = true; attr.CgroupFD = group.FD
 ```
+
+</div>
+
+</div>
+
+::run::
 
 ```bash
 go test ./internal/cgroup/ && make build
@@ -418,217 +305,142 @@ sudo ./mycontainer run -pids 20 ubuntu \
   /bin/sh -c 'cat /sys/fs/cgroup/pids.max; for i in $(seq 40); do sleep 2 & done'
 ```
 
-<div v-click class="pt-2 warn">
-Keep <code>-pids</code> at sixteen or more. <code>pids.max</code> counts the Go init's own threads, and with too few it dies before the bomb does.
+<div v-click="3" class="accent">
+<code>20</code>, then <code>Cannot fork</code>.
 </div>
 
 <!--
-**S15 · YOUR TURN · 22:10**
+**S06 · STEP 3 · 19:00, seven minutes**
 
-Six minutes. Expected: `20`, then `/bin/sh: 0: Cannot fork`.
+**SAY**, one minute: the idea. The line that bites: without
+`memory.swap.max` a process at `memory.max` carries on into swap and the
+limit is a suggestion. Docker sets it for you.
 
-The click is the warning, and it is the PID 8 question from step 1
-answered: the init's threads are processes as far as `pids.max` is
-concerned. tini has one thread; that is the trade for writing this in Go.
-On the two-CPU workshop VM the floor is about seven, and it moves by one
-from run to run. Just under it, `sh` cannot start ("resource temporarily
-unavailable") or the Go runtime dies with "failed to create new OS
-thread". More cores mean more threads, so sixteen is the margin. Someone
-will find the floor. Good. They found it first.
+Click 1 at minute two, click 2 at minute three. `UseCgroupFD` is
+`CLONE_INTO_CGROUP`.
 
-Anyone done early: `-memory 64m` and a 100 MB string, exit 137.
+The warning answers the PID question from step 1: the init's threads
+are processes as far as `pids.max` is concerned. On the workshop VM the
+floor is about seven, and it moves by one from run to run. Just under
+it, `sh` cannot start ("resource temporarily unavailable") or the Go
+runtime dies with "failed to create new OS thread". More cores mean more
+threads, so sixteen is the margin.
 
-**CHECKPOINT** 29:00.
+Anyone done early: `-memory 64m` and
+`/bin/sh -c 'head -c 100000000 /dev/zero | tail'`, exit 137.
+
+**CHECKPOINT** 26:00.
 -->
 
 ---
-layout: section
-chapter: "04"
+layout: step
 ---
 
 ::title::
-Step 4. Capabilities: <span class="ac-accent">what it can do</span>
+Step 4 · Capabilities: what it can do
 
 ::default::
-`internal/caps/caps.go`. Four minutes, and the shortest function of the day.
 
-<!--
-**S16 · SECTION · 29:00**
--->
+<div class="text-base space-y-3">
 
----
-layout: default
----
+The kernel does not ask whether you are UID 0. It asks whether the process holds the capability. `mount(2)` wants `CAP_SYS_ADMIN`, and the fourteen Docker grants by default leave it out. Dropping the rest is written; choosing what to keep is yours.
 
-# Root is fourteen bits
+**You write** `Default()` in `internal/caps/caps.go`.
 
-<div class="text-base pt-1">
-The kernel does not ask "is this UID 0". It asks whether the process holds the capability.
-<code>mount(2)</code> wants <code>CAP_SYS_ADMIN</code>, and Docker's default fourteen do not include it.
 </div>
 
-```
-CAP_CHOWN CAP_DAC_OVERRIDE CAP_FOWNER CAP_FSETID CAP_KILL CAP_SETGID
-CAP_SETUID CAP_SETPCAP CAP_NET_BIND_SERVICE CAP_NET_RAW CAP_SYS_CHROOT
-CAP_MKNOD CAP_AUDIT_WRITE CAP_SETFCAP                       = a80425fb
-```
+::right::
 
-<<< @/snippets/capbset-drop.go go
+<div class="text-base space-y-4">
 
-<!--
-**S17 · CAPS · 29:10**
+<div>The constants at the top of <code>caps.go</code> are the fourteen, plus <code>SysAdmin</code>. Add the fourteen to a <code>Set</code>.</div>
 
-The fourteen are the constants at the top of `caps.go`, in that order;
-`Default()` adds each to a `Set`. The drop below is already written: one
-`prctl(PR_CAPBSET_DROP)` per capability not kept. The bounding set is the
-ceiling, so dropping it once covers `sh` and everything `sh` runs.
--->
+<div v-click="1">Then give one back: <code>-caps default,+CAP_SYS_ADMIN</code>. <code>a82425fb</code>, and the mount works. Bit 21.</div>
 
----
-layout: default
----
+<div class="warn">Capabilities belong to a thread, and Go moves goroutines between threads. <code>Child</code> calls <code>runtime.LockOSThread()</code> before the drop. Read it.</div>
 
-# Your turn: `Default()`
+</div>
 
-```go
-// internal/caps/caps.go
-func Default() Set {
-	// TODO(step 4): the fourteen Docker grants by default.
-	var s Set
-	return s
-}
-```
+::run::
 
 ```bash
 go test ./internal/caps/ ./internal/cli/ && make build
 sudo ./mycontainer run ubuntu \
   /bin/sh -c 'grep CapBnd /proc/self/status; mount -t tmpfs none /tmp'
-sudo ./mycontainer run -caps default,+CAP_SYS_ADMIN ubuntu \
-  /bin/sh -c 'mount -t tmpfs none /tmp && echo MOUNTED'
 ```
 
-<div v-click class="pt-2 accent">
-<code>a80425fb</code> and a refusal. Then <code>a82425fb</code> and <code>MOUNTED</code>. Bit 21.
+<div v-click="2" class="accent">
+<code>a80425fb</code>, and root cannot mount.
 </div>
 
 <!--
-**S18 · YOUR TURN · 30:00**
+**S07 · STEP 4 · 26:00, five minutes**
 
-Three minutes. `cli` goes green here too.
+**SAY**, one minute: the idea, then the warning. It happened while
+writing this, only on the rootless path, only sometimes: drop on one
+thread, fork the command from another, and the command starts with
+everything. If there is one Go-specific thing to take home, it is this.
+
+`cli` goes green here too.
 
 **SAY** when the first refusals come up: "mount says permission denied,
-to a process that id says is root. Root just does not mean mount any
-more."
+to a process that id says is root."
+
+**CHECKPOINT** 31:00.
 -->
 
 ---
-layout: statement
-class: warn
----
-
-# Capabilities belong to a thread.<br/>Go moves goroutines between threads.
-
-<div class="opacity-70 pt-6 text-white">
-Drop on one thread, fork the command from another, and the command starts with everything.<br/>
-<code>runtime.LockOSThread()</code>, before the drop. Already in <code>Child</code>; read it.
-</div>
-
-<!--
-**S19 · WARN · 33:00**
-
-Thirty seconds. The Go trap: it happened while writing this, only on the
-rootless path, only sometimes. `Child` locks itself to one OS thread before
-it does anything. If there is one Go-specific thing to take home, it is
-this.
--->
-
----
-layout: section
-chapter: "05"
+layout: step
 ---
 
 ::title::
-Step 5. Init: <span class="ac-accent">what PID 1 owes</span>
+Step 5 · Init: what PID 1 owes
 
 ::default::
-`internal/initproc/initproc_linux.go`. Seven minutes, and the one people forget.
 
-<!--
-**S20 · SECTION · 33:30**
--->
+<div class="text-base space-y-3">
 
----
-layout: default
----
+When a parent exits before its children, the kernel hands them to PID 1, and only PID 1 can reap them. A PID 1 that never waits collects zombies. The kernel also drops a default signal sent to PID 1, which is why `docker stop` waits ten seconds. Signals are written; reaping is yours.
 
-# Two jobs
+**You write** `reap()` in `internal/initproc/initproc_linux.go`. Today it waits for its own child and nobody else.
 
-<div class="grid grid-cols-2 gap-8 pt-4">
-<div class="border-l-2 b-accent pl-4">
-<div class="accent font-mono text-sm pb-2">REAPING</div>
-<div class="text-lg">
-When a parent exits before its children, the kernel re-parents them to PID 1.
-Only PID 1 can then <code>wait</code> on them. A PID 1 that never does
-collects zombies for as long as it runs.
-</div>
-</div>
-<div class="border-l-2 b-accent pl-4">
-<div class="accent font-mono text-sm pb-2">SIGNALS</div>
-<div class="text-lg">
-The kernel drops a default-disposition signal sent to the init of a PID
-namespace. That is why <code>docker stop</code> waits ten seconds and sends SIGKILL.
-The forwarding is written. The reaping is yours.
-</div>
-</div>
 </div>
 
-<!--
-**S21 · TWO JOBS · 33:40**
+::right::
 
-Forty seconds. This is why Docker has `--init` and tini exists; most
-programs were never written to be PID 1.
--->
+<div class="text-base space-y-4">
 
----
-layout: default
----
+<div>Loop on <code>syscall.Wait4(-1, &ws, syscall.WNOHANG, nil)</code>: any child, and never block.</div>
 
-# Your turn: `reap()`
+<div v-click="1">A pid of <code>0</code> means children exist and none has exited: return. <code>ECHILD</code> means nothing is left: return. <code>EINTR</code>: go round again.</div>
 
-```go
-// internal/initproc/initproc_linux.go
-func reap(main int) (code int, done bool, err error) {
-	// TODO(step 5): this waits for our own child and nobody else. Loop on
-	// wait4(-1, WNOHANG) instead: any child, until there is nothing left.
-	var ws syscall.WaitStatus
-	if _, err := syscall.Wait4(main, &ws, 0, nil); err != nil {
-		return 0, false, err
-	}
-	return ExitCode(ws), true, nil
-}
-```
+<div v-click="2">When the pid is <code>main</code>, keep <code>ExitCode(ws)</code> and set <code>done</code>, then go round again. Any other pid was an orphan: reaped, and forgotten.</div>
+
+</div>
+
+::run::
 
 ```bash
-go test ./internal/initproc/
+go test ./internal/initproc/ && go test ./...
 ```
 
-<div v-click class="pt-2 accent">
-Green means no zombie left behind after an orphan exits. Nothing on this list is red any more.
+<div v-click="3" class="accent">
+Green means no zombie after an orphan exits, and nothing is red any more.
 </div>
 
 <!--
-**S22 · YOUR TURN · 34:20**
+**S08 · STEP 5 · 31:00, seven minutes**
 
-Five minutes. The shape: loop; `wait4(-1, &ws, WNOHANG)`; retry on
-`EINTR`; `ECHILD` means nothing left, return; `pid == 0` means children
-exist and none exited, return; `pid == main` means remember its exit code
-and that we are done; anything else was an orphan, reaped and forgotten.
+**SAY**, one minute: the idea. This is why Docker has `--init` and tini
+exists; most programs were never written to be PID 1.
 
-**WATCH FOR** a loop without `WNOHANG`: it hangs when children exist and
-none has exited, and the test times out rather than fails. Say it at
-minute three.
+Click 1 at minute two, click 2 at minute four.
 
-**CHECKPOINT** 39:30. Go to the wrap whatever the room's state; the test
+**WATCH FOR** a loop without `WNOHANG`. It hangs when children exist and
+none has exited, so the test times out rather than fails. Say it out
+loud at minute three.
+
+**CHECKPOINT** 38:00. Go to the wrap whatever the room's state; the test
 tells the stragglers when they are done.
 -->
 
@@ -647,7 +459,7 @@ layout: default
 </div>
 
 <!--
-**S23 · LIVE · 39:30**
+**S09 · LIVE · 38:00**
 
 **DO**, in the slide's terminal (the finished runtime):
 ```bash
@@ -661,15 +473,15 @@ are the Go runtime naming its memory with `PR_SET_VMA`.
 **SAY**, from the tally on the click:
 > "One clone3 carrying every namespace flag and the cgroup fd: steps 1
 > and 3. Twelve mounts and one pivot_root: step 2. Twenty-seven capability
-> drops: step 4. And an init that reaps: step 5. You wrote each of those this
-> afternoon. That is a container. It always was."
+> drops: step 4. And an init that reaps: step 5. You wrote each of those
+> this afternoon. That is a container. It always was."
 -->
 
 ---
 layout: default
 ---
 
-# Five things to take home
+# Take home
 
 <v-clicks>
 
@@ -681,24 +493,37 @@ layout: default
 
 **4.** PID 1 owes the tree reaping and signals. Bring an init.
 
-**5.** In Go: fork and exec through `/proc/self/exe`, lock the thread before you drop capabilities, and count your own threads against `pids.max`.
+**5.** In Go: start the child through `/proc/self/exe`, lock the thread before you drop capabilities, and count your own threads against `pids.max`.
 
 </v-clicks>
 
 <div v-click class="pt-6 accent">
 At home: three lines of UID mapping make it rootless. <code>docs/workshop.md</code> has them.
-<code>img2rootfs alpine:3.22</code> gives it a real image.
 </div>
 
 <!--
-**S24 · TAKEAWAYS · 42:00**
+**S10 · TAKE HOME · 40:00**
 
-Read all five. Leave this up for questions and for the people still
+Read all five, then leave this up for questions and for the people still
 typing.
 
-The last click is the bonus they did not have time for: `sysProcAttr`
-with one `UidMappings` and one `GidMappings` line, and
-`./mycontainer run` works without sudo, root inside and them outside.
+The last click is the bonus there was no time for: in `sysProcAttr`, one
+`UidMappings` and one `GidMappings` entry, and `./mycontainer run` works
+without sudo, root inside and them outside.
+
+Questions that come up, in order of likelihood:
+
+1. **Why not `unshare(2)` from Go?** A PID namespace only applies to
+   children, and a user namespace needs a single-threaded process. Fork
+   and exec is what every runtime does.
+2. **Where is the network?** A namespace with a down loopback. Wiring a
+   veth pair, a bridge and NAT is its own workshop.
+3. **How does this compare to runc?** Same syscalls in the same order.
+   runc adds seccomp, AppArmor, hooks, the OCI config and years of edge
+   cases. `libcontainer/rootfs_linux.go` will look familiar after today.
+
+Nothing follows in the Workshop Room, so stay with the stragglers until
+the drinks at 5:30.
 -->
 
 ---
@@ -715,18 +540,7 @@ handles:
 ---
 
 <!--
-**S25 · END · 45:00**
+**S11 · END · 45:00**
 
-Leave S24 up for questions. This slide is for the photograph.
-
-Questions that come up, in order of likelihood:
-
-1. **Why not `unshare(2)` from Go?** A PID namespace only applies to
-   children, and a user namespace needs a single-threaded process. Fork
-   and exec is what every runtime does.
-2. **Where is the network?** A namespace with a down loopback. Wiring a
-   veth pair, a bridge and NAT is its own workshop.
-3. **How does this compare to runc?** Same syscalls in the same order.
-   runc adds seccomp, AppArmor, hooks, the OCI config and years of edge
-   cases. `libcontainer/rootfs_linux.go` will look familiar after today.
+For the photograph. Questions stay on S10.
 -->
