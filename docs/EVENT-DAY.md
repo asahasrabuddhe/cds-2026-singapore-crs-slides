@@ -87,7 +87,7 @@ time goes to step 5.
 **A test hangs on step 5.** A `wait4` loop without `WNOHANG`. It is in the
 S22 notes; say it at minute three.
 
-**Someone's `-pids` run kills the init.** They used a limit under sixteen.
+**Someone's `-pids` run kills the init.** They went below what the init's threads need, six or less on a two-CPU VM.
 That is the click on S15, and they found it first.
 
 **Someone's `-hostname` is refused.** They have not wired the clone flags

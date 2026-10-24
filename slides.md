@@ -330,7 +330,7 @@ sudo ./mycontainer run ubuntu /bin/sh -c 'ps; ls /; ls /tmp; mount'
 ```
 
 <div v-click class="pt-2 accent">
-Two processes. The image's tree. An empty <code>/tmp</code>. Nothing from the host in <code>mount</code>.
+Two processes. The image's tree. An empty <code>/tmp</code>. Only its own mounts in <code>mount</code>.
 </div>
 
 <!--
@@ -343,6 +343,11 @@ says so) and calling `pivot_root` from outside the new root (EINVAL at
 runtime; say it out loud at minute four).
 
 At minute six, remind the room about the `cp` escape hatch from S04.
+
+If anyone asks why `mount` names the VM's disk for `/`, such as
+`/dev/vda1 on / type ext4`: the root is a bind mount of `rootfs/ubuntu`,
+which lives on that disk, and the device nodes in `/dev` are bind mounts
+of the host's. What is gone is every other mount the host has.
 
 **CHECKPOINT** 21:00. Past 22:00, do step 3 together on the screen rather
 than as an exercise, and give the time to step 5.
@@ -415,7 +420,7 @@ sudo ./mycontainer run -pids 20 ubuntu \
 ```
 
 <div v-click class="pt-2 warn">
-Keep <code>-pids</code> above sixteen. <code>pids.max</code> counts the Go init's own threads, and below that it dies before the bomb does.
+Keep <code>-pids</code> at sixteen or more. <code>pids.max</code> counts the Go init's own threads, and with too few it dies before the bomb does.
 </div>
 
 <!--
@@ -426,8 +431,10 @@ Six minutes. Expected: `20`, then `/bin/sh: 0: Cannot fork`.
 The click is the warning, and it is the PID 8 question from step 1
 answered: the init's threads are processes as far as `pids.max` is
 concerned. tini has one thread; that is the trade for writing this in Go.
-Someone will try `-pids 8` and see "failed to create new OS thread".
-Good. They found it first.
+On a two-CPU VM the init needs seven: `-pids 7` stops the bomb,
+`-pids 6` kills the init with "failed to create new OS thread". More
+cores mean more threads, so sixteen is the margin. Someone will find
+the floor. Good. They found it first.
 
 Anyone done early: `-memory 64m` and a 100 MB string, exit 137.
 
