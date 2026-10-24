@@ -12,8 +12,7 @@
     "build": "slidev build",
     "export": "slidev export --format pdf --with-clicks --output slides.pdf",
     "export:notes": "slidev export-notes",
-    "snippets": "go run ./cmd/snippets",
-    "install:theme": "op run --env-file=.env -- npm install"
+    "snippets": "go run ./cmd/snippets"
   },
   "devDependencies": {
     "@slidev/cli": "52.14.1",

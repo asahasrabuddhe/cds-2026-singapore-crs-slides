@@ -2,9 +2,9 @@
 // anchor comment, so the deck never contains pasted Go and cannot drift
 // from the program that runs on stage.
 //
-// It reads vendor/crs-code, the git submodule, or the directory named by
-// CRS_CODE_DIR, which is how the deck builds against a sibling checkout
-// before the submodule exists. It scans slides.md for
+// It reads the directory named by CRS_CODE_DIR, which is how the deck
+// builds against a sibling checkout, or vendor/crs-code, where CI clones
+// it. It scans slides.md for
 // `<<< @/snippets/<name>.go` imports, finds the matching
 // `// snippet:start <name>` region, strips the common indentation, and
 // writes snippets/<name>.go. Everything that resolves is written; anything

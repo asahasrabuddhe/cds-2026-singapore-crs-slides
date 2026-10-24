@@ -4,6 +4,10 @@ dist/
 # Exported artefacts, rebuilt by npm run export.
 *.pdf
 
-# Resolved from 1Password at install time, never committed.
+# Local npm settings and editor state, never committed.
 .env
 .npmrc
+.idea/
+
+# The code repository, cloned here by CI for cmd/snippets.
+/vendor/

@@ -3,8 +3,9 @@
 Slides for **Build Your Own Container Runtime in Go**, the forty-five-minute
 workshop at ContainerDays Singapore 2026.
 
-Built with [Slidev](https://sli.dev) and the private
-`slidev-theme-architectural-console` theme. The workshop's code lives in a
+Built with [Slidev](https://sli.dev) and the
+[`slidev-theme-architectural-console`](https://github.com/asahasrabuddhe/slidev-theme-architectural-console)
+theme. The workshop's code lives in a
 sibling repository,
 [`cds-2026-singapore-crs-code`](https://github.com/asahasrabuddhe/cds-2026-singapore-crs-code),
 which the deck pulls its Go from by anchor comment. Attendees work in that
@@ -14,17 +15,14 @@ they do.
 ## Setup
 
 ```bash
-git clone git@github.com:asahasrabuddhe/cds-2026-singapore-crs-slides.git
-git clone git@github.com:asahasrabuddhe/cds-2026-singapore-crs-code.git   # as a sibling
+git clone https://github.com/asahasrabuddhe/cds-2026-singapore-crs-slides.git
+git clone https://github.com/asahasrabuddhe/cds-2026-singapore-crs-code.git   # as a sibling
 cd cds-2026-singapore-crs-slides
-cp .env.example .env && cp .npmrc.example .npmrc
-npm run install:theme      # op run --env-file=.env -- npm install
+npm ci
 npm run dev
 ```
 
-The theme is a private npm package. `.env` holds a 1Password reference
-and `op run` resolves it into the install's environment. Node 24, pinned
-in `.nvmrc`. `@slidev/cli` is pinned to 52.14.1; bump it deliberately.
+Node 24, pinned in `.nvmrc`. `@slidev/cli` is pinned to 52.14.1; bump it deliberately.
 
 ## The shape of the deck
 
@@ -54,7 +52,9 @@ take-home; the last click on S24 points at it.
 
 Two slides show Go pulled from the code repository by anchor comment,
 through `cmd/snippets`. `snippets/*.go` is committed so a fresh clone
-builds; CI regenerates and fails on drift.
+builds. CI clones the code repository into `vendor/crs-code`, where
+`cmd/snippets` looks when `CRS_CODE_DIR` is unset, regenerates them and
+fails on drift.
 
 ```bash
 CRS_CODE_DIR=../cds-2026-singapore-crs-code npm run snippets
