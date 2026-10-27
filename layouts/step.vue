@@ -2,7 +2,9 @@
 // One slide per workshop step: the idea on the left, hints on the right,
 // and the commands to check it across the full width at the bottom, so a
 // long command line never wraps or clips. Based on the theme's
-// two-cols-header.
+// two-cols-header. A slide can rename the two column labels with
+// `leftLabel` and `rightLabel` in its frontmatter.
+defineProps<{ leftLabel?: string; rightLabel?: string }>()
 </script>
 
 <template>
@@ -12,11 +14,11 @@
     </div>
     <div class="cols-area">
       <div class="col-left">
-        <span class="ac-label">THE IDEA</span>
+        <span class="ac-label">{{ leftLabel ?? 'THE IDEA' }}</span>
         <slot />
       </div>
       <div class="col-right">
-        <span class="ac-label">HINTS</span>
+        <span class="ac-label">{{ rightLabel ?? 'HINTS' }}</span>
         <slot name="right" />
       </div>
     </div>

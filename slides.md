@@ -46,20 +46,20 @@ layout: default
 
 <div class="text-lg space-y-3 pt-2">
 
-**1.** The Multipass VM from `docs/setup.md`. `multipass shell crs`, then:
+**1.** The Multipass VM from `docs/setup.md`. On your machine:
 
 ```bash
-git clone https://github.com/asahasrabuddhe/cds-2026-singapore-crs-code.git ~/crs
-cd ~/crs && ./scripts/check.sh          # every line OK, last line: ready
+git clone https://github.com/asahasrabuddhe/cds-2026-singapore-crs-code.git crs
+multipass mount crs crs:/home/ubuntu/crs
 ```
 
-**2.** A second `multipass shell crs`, with your editor on `~/crs/workshop/start`.
-
-**3.** This, in the VM:
+**2.** In the VM, `multipass shell crs`, then:
 
 ```bash
-cd ~/crs/workshop/start && make build rootfs && go test ./...
+cd ~/crs && ./scripts/check.sh && make build && go test ./...
 ```
+
+**3.** Your editor on the `crs` folder, on your machine.
 
 </div>
 
@@ -97,7 +97,7 @@ Each step: I explain the idea, you write it, the test tells you when it is right
 </div>
 
 <div v-click class="pt-3 accent">
-Stuck? The answer is the same file two directories up. <code>cp ../../internal/rootfs/rootfs.go internal/rootfs/</code>, and carry on.
+Stuck? The answer is on the <code>final</code> branch. <code>git restore --source origin/final internal/rootfs/rootfs.go</code>, and carry on.
 </div>
 
 <!--
@@ -113,7 +113,69 @@ behind at step 2.
 -->
 
 ---
+layout: code-split
+lang: go
+---
+
+## Namespaces are bits on a clone
+
+A namespace is a flag on `clone(2)`. It applies to the new process, never to the one asking.
+
+<div v-click="1">The kernel has seven: PID, mount, UTS, IPC, network, cgroup and user. One bit each.</div>
+
+<div v-click="2">The container has to set itself up from inside, so the runtime starts itself again as the child.</div>
+
+<div v-click="2" class="accent">Your job: turn the spec's fields into those bits, and hand them to the clone.</div>
+
+::right::
+
+````md magic-move {at:1}
+```go
+// A process.
+cmd := exec.Command("/bin/sh")
+cmd.Stdin, cmd.Stdout = os.Stdin, os.Stdout
+cmd.Run()
+```
+```go
+// A process in new namespaces.
+cmd := exec.Command("/bin/sh")
+cmd.SysProcAttr = &syscall.SysProcAttr{
+	Cloneflags: syscall.CLONE_NEWUTS |
+		syscall.CLONE_NEWPID,
+}
+cmd.Stdin, cmd.Stdout = os.Stdin, os.Stdout
+cmd.Run()
+```
+```go
+// The runtime, started again inside them.
+cmd := exec.Command("/proc/self/exe", "child")
+cmd.SysProcAttr = &syscall.SysProcAttr{
+	Cloneflags: syscall.CLONE_NEWUTS |
+		syscall.CLONE_NEWPID,
+}
+cmd.Stdin, cmd.Stdout = os.Stdin, os.Stdout
+cmd.Run()
+
+// In the child, PID 1 in the new namespace:
+// the hostname, the rootfs, the limits, then
+// the command.
+```
+````
+
+<!--
+**S04 · NAMESPACES · 4:00, one minute**
+
+**SAY**: "A namespace is one bit on a clone, and it is the child that
+gets it." Click once per sentence on the left; the code follows.
+
+The last state is the shape of the whole runtime: `run` re-executes
+itself through `/proc/self/exe` as `child`, and the child does
+everything the next four steps add. Then S05 and "go".
+-->
+
+---
 layout: step
+leftLabel: DO THIS
 ---
 
 ::title::
@@ -121,11 +183,12 @@ Step 1 · Namespaces: what it can see
 
 ::default::
 
-<div class="text-base space-y-3">
+<div class="steps text-base">
 
-A namespace is one bit passed to `clone(2)`, and it applies to the child. So `mycontainer run` starts itself again as `mycontainer child`, through `/proc/self/exe`, with the flags on that clone. The child is the container.
-
-**You write** `CloneFlags()` in `internal/namespace/namespace.go`, then one line in `sysProcAttr`, `internal/container/container_linux.go`.
+1. Open `internal/namespace/namespace.go` and find `TODO(step 1)`.
+2. The PID flag is written for you. Add the other six the same way.
+3. Run `go test ./internal/namespace/` until it passes.
+4. Open `internal/container/container_linux.go`, find `TODO(step 1)`, and add one line.
 
 </div>
 
@@ -133,21 +196,23 @@ A namespace is one bit passed to `clone(2)`, and it applies to the child. So `my
 
 <div class="text-base space-y-4">
 
-<div>The seven <code>CloneNew…</code> constants are at the top of the file. OR in each one whose field is on.</div>
-
 <div v-click="1">
 
+Item 2, once more for each field:
+
 ```go
-var f uintptr
-if s.PID {
-	f |= CloneNewPID
+if s.Mount {
+	f |= syscall.CLONE_NEWNS
 }
-// ...six more
 ```
+
+Mount is the odd one: <code>CLONE_NEWNS</code>. The rest are their own names.
 
 </div>
 
 <div v-click="2">
+
+Item 4 is this line:
 
 ```go
 attr.Cloneflags = s.Namespaces.CloneFlags()
@@ -160,19 +225,18 @@ attr.Cloneflags = s.Namespaces.CloneFlags()
 ::run::
 
 ```bash
-go test ./internal/namespace/ && make build
-sudo ./mycontainer run -ns pid,uts -hostname box ubuntu \
-  /bin/sh -c 'hostname; echo $$; ls -d /proc/[0-9]* | wc -l'
+make build && sudo ./mycontainer run -ns pid,uts -hostname box ubuntu /bin/sh
+hostname; echo $$; ls /proc          # type these inside
 ```
 
 <div v-click="3" class="accent">
-<code>box</code>, a small PID, and <code>/proc</code> still lists the host. Why?
+<code>box</code>, a small PID, and <code>/proc</code> still lists the VM's processes. Why?
 </div>
 
 <!--
-**S04 · STEP 1 · 4:00, five minutes**
+**S05 · STEP 1 · 5:00, four minutes**
 
-**SAY**, one minute: the idea on the left. Then "go", and walk the room.
+S04 was the idea. Here, "go", and walk the room.
 
 Click 1 at minute two, click 2 at minute three, for the room rather than
 for anyone in particular. The test names the missing flag when one is
@@ -187,6 +251,78 @@ PID 8 or 9 rather than 2 because the Go init's threads took the numbers
 in between; it comes back at step 3.
 
 **CHECKPOINT** 9:00. Step 2 whatever the room's state.
+-->
+
+---
+layout: code-split
+lang: mounts
+---
+
+## The root is a directory, swapped in
+
+The container's `/` is a directory on the VM's disk, swapped in by `pivot_root(2)`. The order is the lesson.
+
+<div v-click="1">Make <code>/</code> private, so nothing leaks out. Bind the image onto itself: <code>pivot_root</code> wants a mount point.</div>
+
+<div v-click="2">Mount <code>/proc</code>, <code>/dev</code> and <code>/sys</code> inside it.</div>
+
+<div v-click="3">Step in and pivot. The VM's root hangs off <code>/.old_root</code>.</div>
+
+<div v-click="4" class="accent">Detach it and remove it. Nothing points out.</div>
+
+::right::
+
+````md magic-move {at:1}
+```text
+/                       the VM's root, shared
+├── proc                the VM's processes
+├── tmp/host-was-here
+└── …/rootfs/ubuntu     a directory
+```
+```text
+/                       the VM's root, private
+├── proc                the VM's processes
+├── tmp/host-was-here
+└── …/rootfs/ubuntu     a mount point
+```
+```text
+/                       the VM's root, private
+├── proc                the VM's processes
+├── tmp/host-was-here
+└── …/rootfs/ubuntu     a mount point
+    ├── proc            the container's processes
+    ├── dev             a tmpfs, a few devices
+    └── sys             read-only
+```
+```text
+/                       the image
+├── proc                the container's processes
+├── dev                 a tmpfs, a few devices
+├── sys                 read-only
+└── .old_root           the VM's root, still there
+    └── tmp/host-was-here
+```
+```text
+/                       the image
+├── proc                the container's processes
+├── dev                 a tmpfs, a few devices
+├── sys                 read-only
+└── tmp                 empty
+```
+````
+
+<!--
+**S06 · ROOTFS · 9:00, one minute**
+
+**SAY**, first: "`ps` reads `/proc`, and `/proc` was the host's. That is
+step 1's answer." Then one click per picture.
+
+On the first click, the warning: systemd makes every mount shared, so
+without the private mount, unmounting the old root inside the namespace
+unmounts the VM's. People have done this to their laptops.
+
+These five pictures are the seven steps in `Pivot`: private, bind,
+three mounts, chdir and pivot, detach and remove. Then S07 and "go".
 -->
 
 ---
@@ -215,7 +351,7 @@ Step 2 · Rootfs: where it lives
 ```go
 {"make / private", func() error {
 	return m.Mount("", "/", "",
-		MS_REC|MS_PRIVATE, "")
+		syscall.MS_REC|syscall.MS_PRIVATE, "")
 }, false},
 ```
 
@@ -238,23 +374,75 @@ Two processes. The image's tree. An empty <code>/tmp</code>. Only its own mounts
 </div>
 
 <!--
-**S05 · STEP 2 · 9:00, ten minutes**
+**S07 · STEP 2 · 10:00, nine minutes**
 
-**SAY**, one minute: the answer to step 1's question, then the idea. Step
-1 of the seven matters most: systemd makes every mount shared, so
-unmounting the old root inside the namespace would propagate out and
-unmount the host's. People have done this to their laptops.
+S06 was the idea and the warning about shared mounts. Here, "go".
 
 Click 1 at minute two, click 2 at minute four. At minute six, say the
 `cp` escape hatch out loud again.
 
 If anyone asks why `mount` names the VM's disk for `/`, such as
-`/dev/sda1 on / type ext4`: the root is a bind mount of `rootfs/ubuntu`,
-which lives on that disk, and the device nodes in `/dev` are bind mounts
+`/dev/sda1 on / type ext4`: the root is a bind mount of
+`/var/lib/mycontainer/rootfs/ubuntu`, which lives on that disk, and the device nodes in `/dev` are bind mounts
 of the VM's. What is gone is every other mount the VM has.
 
 **CHECKPOINT** 19:00. Past 20:00, do step 3 together on the screen and
 give its time to step 5.
+-->
+
+---
+layout: code-split
+lang: shell
+---
+
+## A limit is a number in a file
+
+cgroup v2 is a filesystem. A group is a directory, and the kernel fills it with files.
+
+<div v-click="1">Write a number to a file and the kernel enforces it. Without the swap file, the memory limit is a suggestion.</div>
+
+<div v-click="2">A process joins by writing its PID. The runtime's child is born inside, so its first fork counts.</div>
+
+<div v-click="2" class="accent">Your job: which file gets which number, and the flag that puts the child inside.</div>
+
+::right::
+
+````md magic-move {at:1}
+```bash
+$ cd /sys/fs/cgroup && mkdir box && cd box
+$ ls
+cgroup.procs  cpu.max  memory.max  pids.max  …
+```
+```bash
+$ cd /sys/fs/cgroup && mkdir box && cd box
+$ echo 20 > pids.max
+$ echo 67108864 > memory.max       # 64 MiB
+$ echo 0 > memory.swap.max
+$ echo "50000 100000" > cpu.max    # half a CPU
+```
+```bash
+$ cd /sys/fs/cgroup && mkdir box && cd box
+$ echo 20 > pids.max
+$ echo 67108864 > memory.max       # 64 MiB
+$ echo 0 > memory.swap.max
+$ echo "50000 100000" > cpu.max    # half a CPU
+$ echo $$ > cgroup.procs
+$ for i in $(seq 40); do sleep 9 & done
+# fork fails once the group holds 20
+```
+````
+
+<!--
+**S08 · CGROUPS · 19:00, one minute**
+
+**SAY**: "cgroup v2 is a filesystem." One click per sentence.
+
+`cpu.max` is a quota and a period in microseconds, so half a CPU is
+`50000 100000`. The flag on the last click is `CLONE_INTO_CGROUP`, which
+Go spells `UseCgroupFD`.
+
+The shell is the idea, not the task: the runtime writes these files from
+Go, and the test checks the names and the numbers. Then S09 and "go".
 -->
 
 ---
@@ -310,9 +498,9 @@ sudo ./mycontainer run -pids 20 ubuntu \
 </div>
 
 <!--
-**S06 · STEP 3 · 19:00, seven minutes**
+**S09 · STEP 3 · 20:00, six minutes**
 
-**SAY**, one minute: the idea. The line that bites: without
+S08 was the idea. Here, "go". The line that bites, if anyone asks: without
 `memory.swap.max` a process at `memory.max` carries on into swap and the
 limit is a suggestion. Docker sets it for you.
 
@@ -330,6 +518,65 @@ Anyone done early: `-memory 64m` and
 `/bin/sh -c 'head -c 100000000 /dev/zero | tail'`, exit 137.
 
 **CHECKPOINT** 26:00.
+-->
+
+---
+layout: code-split
+lang: /proc/self/status
+---
+
+## Root is a set of bits
+
+The kernel does not ask whether you are UID 0. It asks whether the process holds the capability for what it is doing.
+
+<div v-click="1">Docker keeps fourteen. <code>CAP_SYS_ADMIN</code>, bit 21, is not one of them, and <code>mount(2)</code> wants it.</div>
+
+<div v-click="2">So root in the container cannot mount.</div>
+
+<div v-click="2" class="accent">Your job: the fourteen. Dropping the rest is written.</div>
+
+::right::
+
+````md magic-move {at:1}
+```text
+# root on the VM
+CapBnd: 000001ffffffffff    bits 0 to 40, all of them
+```
+```text
+# root in the container
+CapBnd: 00000000a80425fb    fourteen bits
+
+ 0 chown          7 setuid             27 mknod
+ 1 dac_override   8 setpcap            29 audit_write
+ 3 fowner        10 net_bind_service   31 setfcap
+ 4 fsetid        13 net_raw
+ 5 kill          18 sys_chroot
+ 6 setgid
+```
+```text
+# root in the container
+CapBnd: 00000000a80425fb    fourteen bits
+
+ 0 chown          7 setuid             27 mknod
+ 1 dac_override   8 setpcap            29 audit_write
+ 3 fowner        10 net_bind_service   31 setfcap
+ 4 fsetid        13 net_raw
+ 5 kill          18 sys_chroot
+ 6 setgid        21 sys_admin  ✗
+
+# mount -t tmpfs none /tmp
+mount: /tmp: permission denied.
+```
+````
+
+<!--
+**S10 · CAPABILITIES · 26:00, one minute**
+
+**SAY**: "Root is not a number. It is a set of bits." One click per
+sentence.
+
+Every bit in `a80425fb` is one of the fourteen, which is why the check
+on S11 reads that value. Then S11, the thread warning, and "go".
 -->
 
 ---
@@ -374,9 +621,9 @@ sudo ./mycontainer run ubuntu \
 </div>
 
 <!--
-**S07 · STEP 4 · 26:00, five minutes**
+**S11 · STEP 4 · 27:00, four minutes**
 
-**SAY**, one minute: the idea, then the warning. It happened while
+S10 was the idea. **SAY** the warning, then "go". It happened while
 writing this, only on the rootless path, only sometimes: drop on one
 thread, fork the command from another, and the command starts with
 everything. If there is one Go-specific thing to take home, it is this.
@@ -387,6 +634,67 @@ everything. If there is one Go-specific thing to take home, it is this.
 to a process that id says is root."
 
 **CHECKPOINT** 31:00.
+-->
+
+---
+layout: code-split
+lang: ps
+---
+
+## PID 1 waits for everyone
+
+When a parent exits before its children, the kernel hands them to PID 1.
+
+<div v-click="1">A child that exits stays in the table, a zombie, until its parent waits for it.</div>
+
+<div v-click="2">Only PID 1 can wait for an orphan. One that waits for its own child and nobody else collects zombies.</div>
+
+<div v-click="3" class="accent">Your job: wait for any child, as often as one exits, and never block.</div>
+
+::right::
+
+````md magic-move {at:1}
+```text
+  PID  PPID  STAT  CMD
+    1     0  S     mycontainer child
+    8     1  S     sh
+    9     8  S     sh -c 'sleep 2 &'
+   10     9  S     sleep 2
+```
+```text
+  PID  PPID  STAT  CMD
+    1     0  S     mycontainer child
+    8     1  S     sh
+   10     1  S     sleep 2
+
+# 9 exited. Its child is PID 1's now.
+```
+```text
+  PID  PPID  STAT  CMD
+    1     0  S     mycontainer child
+    8     1  S     sh
+   10     1  Z     [sleep] <defunct>
+
+# 10 exited. Nobody has waited for it.
+```
+```text
+  PID  PPID  STAT  CMD
+    1     0  S     mycontainer child
+    8     1  S     sh
+
+# PID 1 called wait4(-1, …, WNOHANG).
+```
+````
+
+<!--
+**S12 · INIT · 31:00, one minute**
+
+**SAY**: "When a parent exits first, its children go to PID 1." One click
+per picture.
+
+This is why Docker has `--init` and tini exists: most programs were
+never written to be PID 1. Signals are written for them; S13 says which
+`wait4` results mean what. Then "go".
 -->
 
 ---
@@ -429,10 +737,9 @@ Green means no zombie after an orphan exits, and nothing is red any more.
 </div>
 
 <!--
-**S08 · STEP 5 · 31:00, seven minutes**
+**S13 · STEP 5 · 32:00, six minutes**
 
-**SAY**, one minute: the idea. This is why Docker has `--init` and tini
-exists; most programs were never written to be PID 1.
+S12 was the idea. Here, "go".
 
 Click 1 at minute two, click 2 at minute four.
 
@@ -459,7 +766,7 @@ layout: default
 </div>
 
 <!--
-**S09 · LIVE · 38:00**
+**S14 · LIVE · 38:00**
 
 **DO**, in the slide's terminal (the finished runtime):
 ```bash
@@ -502,7 +809,7 @@ At home: three lines of UID mapping make it rootless. <code>docs/workshop.md</co
 </div>
 
 <!--
-**S10 · TAKE HOME · 40:00**
+**S15 · TAKE HOME · 40:00**
 
 Read all five, then leave this up for questions and for the people still
 typing.
@@ -540,7 +847,7 @@ handles:
 ---
 
 <!--
-**S11 · END · 45:00**
+**S16 · END · 45:00**
 
-For the photograph. Questions stay on S10.
+For the photograph. Questions stay on S15.
 -->

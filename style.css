@@ -96,3 +96,39 @@
 :root .slidev-note.prose blockquote p::after {
   content: none;
 }
+
+/* The concept slides put a Magic Move block in the right half of the
+ * theme's code-split layout, which gives it no padding and 12px code.
+ * Centre it and size it to be read from the back of the room. */
+.layout-code-split .code-split-right {
+  justify-content: center;
+  padding: var(--ac-space-8) var(--ac-space-6);
+}
+
+.layout-code-split .code-split-right {
+  --slidev-code-font-size: 16px;
+  --slidev-code-line-height: 1.5;
+}
+
+.layout-code-split .code-split-left {
+  --ac-text-body: 16px;
+  font-size: 16px;
+  gap: var(--ac-space-3);
+}
+
+/* Numbered instructions in a step slide's DO THIS column. The theme lays
+ * an ordered list item out as a flex row, which turns every inline code
+ * span into its own column. Keep the theme's 01, 02 counter, and let the
+ * text flow as a paragraph beside it. */
+.layout-step .steps ol li {
+  display: block;
+  position: relative;
+  padding-left: 40px;
+  color: var(--ac-on-surface);
+}
+
+.layout-step .steps ol li::before {
+  position: absolute;
+  left: 0;
+  top: 2px;
+}

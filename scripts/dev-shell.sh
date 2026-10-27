@@ -6,9 +6,8 @@
 # it is needed.
 #
 # The dev server runs this as `$SHELL -l -c ./scripts/dev-shell.sh` with
-# the slides repo as cwd. ~/crs in the VM is its own clone from GitHub,
-# made by `make vm` in the code repository, so push from the laptop and
-# `git pull` in the VM before the talk.
+# the slides repo as cwd. ~/crs in the VM is the laptop's checkout of the
+# code repository, shared by `make vm` there. Keep it on the final branch.
 #
 # PROMPT_DIRTRIM keeps bash's prompt to the last path component, so the
 # full path does not wrap every command line.

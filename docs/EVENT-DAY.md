@@ -27,31 +27,33 @@ than step 1.
 From the code repository on the laptop:
 
 ```console
-$ make vm                     # multipass launch, provision, clone to ~/crs in the VM
+$ git switch final
+$ make vm                     # multipass launch, provision, share this checkout as ~/crs
 ```
 
-The VM has its own clone from GitHub, like every attendee's. Push from
-the laptop, then `git pull` in the VM.
+The VM sees the laptop's checkout, shared the way every attendee shares
+theirs. Keep it on `final`: the slide terminal and `demo.sh` run the
+finished runtime.
 
 ## T-60: check the VM
 
 ```console
 $ make vm-shell               # lands in ~/crs inside the VM
-$ git pull
 $ ./scripts/check.sh          # ready; pulls ubuntu:26.04 the first time
 $ make build
 $ ./scripts/demo.sh 7         # the one live beat
 ```
 
-Then the starting point, because the room will:
+Then the starting point, because the room will. `git switch main` on the
+laptop, then in the VM:
 
 ```console
-$ cd workshop/start && make build rootfs && go test ./...
+$ make build && go test ./...
 ```
 
-Six packages fail on Linux. If a seventh does, or one fewer, the stubs
-have drifted from the reference; do not present a starting point you have
-not run.
+Six packages fail. If a seventh does, or one fewer, the stubs have
+drifted from the reference; do not present a starting point you have not
+run. Then `git switch final` on the laptop, and `make build` again.
 
 ## T-30: the deck
 
@@ -59,7 +61,7 @@ not run.
 $ npm run dev
 ```
 
-`p` for presenter mode. Click into the terminal on S09 and confirm it
+`p` for presenter mode. Click into the terminal on S14 and confirm it
 lands in the code repository inside the VM.
 
 ## T-10: the room
@@ -73,10 +75,10 @@ One slide per step, and the room writes code for most of each: 5, 10, 7,
 5 and 7 minutes. Explain the idea for a minute, say "go", and walk the
 room. The clicks on the right are hints, and the notes say when to give
 each one, for the room rather than for anyone in particular. Anyone stuck
-gets the finished file, which S03 says out loud:
+gets the finished file from `final`, which S03 says out loud:
 
 ```bash
-cp ../../internal/rootfs/rootfs.go internal/rootfs/rootfs.go
+git restore --source origin/final internal/rootfs/rootfs.go
 ```
 
 Checkpoints: 4:00 start step 1 whatever the clock says, 19:00 out of step
@@ -89,10 +91,10 @@ demo on the screen and its time goes to step 5.
 **The slide terminal is dead.** `r` in it.
 
 **A test hangs on step 5.** A `wait4` loop without `WNOHANG`. It is in the
-S08 notes; say it at minute three.
+S13 notes; say it at minute three.
 
 **Someone's `-pids` run kills the init.** They went below what the init's threads need, about seven on the workshop VM.
-That is the warning on S06, and they found it first.
+That is the warning on S09, and they found it first.
 
 **Someone's `-hostname` is refused.** They have not wired the clone flags
 yet. The refusal is deliberate: without `CLONE_NEWUTS` the call would
