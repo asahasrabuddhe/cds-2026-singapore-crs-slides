@@ -327,6 +327,7 @@ three mounts, chdir and pivot, detach and remove. Then S07 and "go".
 
 ---
 layout: step
+leftLabel: DO THIS
 ---
 
 ::title::
@@ -334,11 +335,12 @@ Step 2 · Rootfs: where it lives
 
 ::default::
 
-<div class="text-base space-y-3">
+<div class="steps text-base">
 
-`ps` reads `/proc`, and `/proc` is the host's until the container mounts its own. That is step 1's answer. The container's root is a directory that `pivot_root` swaps in, and the order of the calls is the lesson.
-
-**You write** the `steps` list in `Pivot`, `internal/rootfs/rootfs.go`. The comment lists all seven.
+1. Open `internal/rootfs/rootfs.go` and find `TODO(step 2)` in `Pivot`.
+2. The comment lists seven things. Turn each into an entry in `steps`, in that order. The first is on the right.
+3. Run `go test ./internal/rootfs/` after each one. It prints the call it wanted next, flags and all.
+4. When it passes, run the check below.
 
 </div>
 
@@ -346,7 +348,7 @@ Step 2 · Rootfs: where it lives
 
 <div class="text-base space-y-4">
 
-<div>Each step is a name, a call through <code>m</code>, and whether it may fail. The first:</div>
+<div>Item 2, the first entry:</div>
 
 ```go
 {"make / private", func() error {
@@ -355,22 +357,21 @@ Step 2 · Rootfs: where it lives
 }, false},
 ```
 
-<div v-click="1">Write one, run the test. It prints the call it wanted, flags and all.</div>
+<div v-click="1">Items 3 to 5: <code>m.Mount</code> with <code>"proc"</code>, <code>"tmpfs"</code>, <code>"sysfs"</code> and <code>"cgroup2"</code>, and <code>populateDev</code> after the tmpfs.</div>
 
-<div v-click="2">Private first. Bind the rootfs onto itself: <code>pivot_root</code> wants a mount point.</div>
+<div v-click="2">Item 6: <code>m.Chdir</code>, <code>m.PivotRoot</code>, <code>m.Chdir</code>. Item 7: <code>m.Unmount</code>, <code>m.Remove</code>.</div>
 
 </div>
 
 ::run::
 
 ```bash
-go test ./internal/rootfs/ && make build
-touch /tmp/host-was-here
-sudo ./mycontainer run ubuntu /bin/sh -c 'ps; ls /; ls /tmp; mount'
+make build && touch /tmp/host-was-here && sudo ./mycontainer run ubuntu /bin/sh
+ps; ls /; ls /tmp; mount             # type these inside
 ```
 
 <div v-click="3" class="accent">
-Two processes. The image's tree. An empty <code>/tmp</code>. Only its own mounts.
+PID 1, your shell and <code>ps</code>. The image's tree. An empty <code>/tmp</code>. Only its own mounts.
 </div>
 
 <!--
@@ -447,6 +448,7 @@ Go, and the test checks the names and the numbers. Then S09 and "go".
 
 ---
 layout: step
+leftLabel: DO THIS
 ---
 
 ::title::
@@ -454,25 +456,28 @@ Step 3 · cgroups: what it can use
 
 ::default::
 
-<div class="text-base space-y-3">
+<div class="steps text-base">
 
-cgroup v2 is a filesystem. A limit is a number written to a file in the container's directory, and the kernel enforces it. The child is born inside that directory, so the first fork of a fork bomb already counts.
-
-**You write** `Files()` and `cpuMax()` in `internal/cgroup/cgroup.go`, then two lines in `sysProcAttr`.
-
-<div class="warn">Keep <code>-pids</code> at sixteen or more. It counts the Go init's own threads.</div>
+1. Open `internal/cgroup/cgroup.go` and write `cpuMax()` at `TODO(step 3)`.
+2. Write `Files()` just below it: one file per limit that is set.
+3. Run `go test ./internal/cgroup/` until it passes.
+4. Open `internal/container/container_linux.go`, find `TODO(step 3)`, and add the lines on the right.
 
 </div>
+
+<div class="warn text-base">Keep <code>-pids</code> at sixteen or more. It counts the Go init's own threads.</div>
 
 ::right::
 
 <div class="text-base space-y-4">
 
-<div>Four files: <code>memory.max</code> in bytes, <code>memory.swap.max</code> as <code>0</code> beside it, <code>cpu.max</code>, <code>pids.max</code>. A zero limit writes nothing.</div>
+<div>Item 2 is four files: <code>memory.max</code> in bytes, <code>memory.swap.max</code> as <code>0</code> beside it, <code>cpu.max</code>, <code>pids.max</code>. A zero limit writes nothing.</div>
 
-<div v-click="1"><code>cpu.max</code> is a quota and a period in microseconds. The period is 100000, so half a CPU is <code>50000 100000</code>.</div>
+<div v-click="1">Item 1: <code>cpu.max</code> is a quota and a period in microseconds. The period is 100000, so half a CPU is <code>50000 100000</code>.</div>
 
 <div v-click="2">
+
+Item 4:
 
 ```go
 if group != nil {
@@ -488,9 +493,8 @@ if group != nil {
 ::run::
 
 ```bash
-go test ./internal/cgroup/ && make build
-sudo ./mycontainer run -pids 20 ubuntu \
-  /bin/sh -c 'cat /sys/fs/cgroup/pids.max; for i in $(seq 40); do sleep 2 & done'
+make build && sudo ./mycontainer run -pids 20 ubuntu /bin/sh
+cat /sys/fs/cgroup/pids.max; for i in $(seq 40); do sleep 2 & done     # inside
 ```
 
 <div v-click="3" class="accent">
@@ -581,6 +585,7 @@ on S11 reads that value. Then S11, the thread warning, and "go".
 
 ---
 layout: step
+leftLabel: DO THIS
 ---
 
 ::title::
@@ -588,11 +593,12 @@ Step 4 · Capabilities: what it can do
 
 ::default::
 
-<div class="text-base space-y-3">
+<div class="steps text-base">
 
-The kernel does not ask whether you are UID 0. It asks whether the process holds the capability. `mount(2)` wants `CAP_SYS_ADMIN`, and the fourteen Docker grants by default leave it out. Dropping the rest is written; choosing what to keep is yours.
-
-**You write** `Default()` in `internal/caps/caps.go`.
+1. Open `internal/caps/caps.go` and find `TODO(step 4)` in `Default()`.
+2. Add the capabilities at the top of the file to the `Set`, all but `SysAdmin`. That is fourteen.
+3. Run `go test ./internal/caps/ ./internal/cli/` until both pass.
+4. Read `Child` in `internal/container/container_linux.go`. It locks the thread before the drop, and the warning says why.
 
 </div>
 
@@ -600,20 +606,30 @@ The kernel does not ask whether you are UID 0. It asks whether the process holds
 
 <div class="text-base space-y-4">
 
-<div>The constants at the top of <code>caps.go</code> are the fourteen, plus <code>SysAdmin</code>. Add the fourteen to a <code>Set</code>.</div>
+<div>
 
-<div v-click="1">Then give one back: <code>-caps default,+CAP_SYS_ADMIN</code>. <code>a82425fb</code>, and the mount works. Bit 21.</div>
+Item 2:
 
-<div class="warn">Capabilities belong to a thread, and Go moves goroutines between threads. <code>Child</code> calls <code>runtime.LockOSThread()</code> before the drop. Read it.</div>
+```go
+var s Set
+s.Add(Chown)
+// ...thirteen more
+return s
+```
+
+</div>
+
+<div v-click="1">Give one back with <code>-caps default,+CAP_SYS_ADMIN</code>: <code>a82425fb</code>, bit 21, and the mount works.</div>
+
+<div class="warn">Capabilities are per thread. Drop on one, fork from another, and the command keeps them all.</div>
 
 </div>
 
 ::run::
 
 ```bash
-go test ./internal/caps/ ./internal/cli/ && make build
-sudo ./mycontainer run ubuntu \
-  /bin/sh -c 'grep CapBnd /proc/self/status; mount -t tmpfs none /tmp'
+make build && sudo ./mycontainer run ubuntu /bin/sh
+grep CapBnd /proc/self/status; mount -t tmpfs none /tmp      # type these inside
 ```
 
 <div v-click="2" class="accent">
@@ -699,6 +715,7 @@ never written to be PID 1. Signals are written for them; S13 says which
 
 ---
 layout: step
+leftLabel: DO THIS
 ---
 
 ::title::
@@ -706,11 +723,12 @@ Step 5 · Init: what PID 1 owes
 
 ::default::
 
-<div class="text-base space-y-3">
+<div class="steps text-base">
 
-When a parent exits before its children, the kernel hands them to PID 1, and only PID 1 can reap them. A PID 1 that never waits collects zombies. The kernel also drops a default signal sent to PID 1, which is why `docker stop` waits ten seconds. Signals are written; reaping is yours.
-
-**You write** `reap()` in `internal/initproc/initproc_linux.go`. Today it waits for its own child and nobody else.
+1. Open `internal/initproc/initproc_linux.go` and find `TODO(step 5)` in `reap()`.
+2. Replace the one `Wait4(main, …)` with a loop on `Wait4(-1, …, syscall.WNOHANG, nil)`.
+3. Decide what each result means. The hints say.
+4. Run `go test ./internal/initproc/`, then `go test ./...`.
 
 </div>
 
@@ -718,11 +736,23 @@ When a parent exits before its children, the kernel hands them to PID 1, and onl
 
 <div class="text-base space-y-4">
 
-<div>Loop on <code>syscall.Wait4(-1, &ws, syscall.WNOHANG, nil)</code>: any child, and never block.</div>
+<div>
 
-<div v-click="1">A pid of <code>0</code> means children exist and none has exited: return. <code>ECHILD</code> means nothing is left: return. <code>EINTR</code>: go round again.</div>
+Item 2: any child, and never block.
 
-<div v-click="2">When the pid is <code>main</code>, keep <code>ExitCode(ws)</code> and set <code>done</code>, then go round again. Any other pid was an orphan: reaped, and forgotten.</div>
+```go
+for {
+	var ws syscall.WaitStatus
+	pid, err := syscall.Wait4(-1, &ws,
+		syscall.WNOHANG, nil)
+}
+```
+
+</div>
+
+<div v-click="1">Item 3. <code>pid == 0</code>: none has exited yet, return. <code>ECHILD</code>: none left, return. <code>EINTR</code>: again.</div>
+
+<div v-click="2"><code>pid == main</code>: keep <code>ExitCode(ws)</code> and set <code>done</code>. Any other pid was an orphan. Loop either way.</div>
 
 </div>
 
